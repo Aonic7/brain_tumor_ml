@@ -1,91 +1,72 @@
+from PIL import Image
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset, DataLoader
+from sklearn.preprocessing import LabelEncoder
+from PIL import Image
+import pickle
 
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-import os
-from src.Config import Config as cfg
-from src.data import Utils 
+class BrainDataset(Dataset):
+    """
+    A dataset class that loads images from directories, applies scaling,
+    and converts them into PyTorch tensors for model training and testing.
+    It expects a list of file paths and corresponding labels.
+    """
+    def __init__(self, files, mode, transforms_train = None):
+        super().__init__()
+        # List of files
+        self.files = sorted(files)
+        #print(self.files)
+        # Mode
+        self.mode = mode
 
-def preprocess_data(raw_data_path):
-    """
-    Preprocesses raw data and returns the processed data.
-    
-    Args:
-        raw_data_path (str): Path to the raw data file.
-        
-    Returns:
-        pd.DataFrame: Processed data.
-    """
-    # Load raw data
-    
-    
-    
-    
-    # Perform preprocessing steps (e.g., handle missing values, encode categorical variables)
-    # For demonstration, let's assume we're dropping missing values and scaling numerical features
-    processed_data = raw_data.dropna()
-    numerical_features = processed_data.select_dtypes(include=['int', 'float']).columns
-    scaler = StandardScaler()
-    processed_data[numerical_features] = scaler.fit_transform(processed_data[numerical_features])
-    
-    return processed_data
+        if self.mode not in DATA_MODES:
+            print(f"{self.mode} is not correct; correct modes: {DATA_MODES}")
+            raise NameError
 
-def extract_features(processed_data):
-    """
-    Extracts features from processed data.
-    
-    Args:
-        processed_data (pd.DataFrame): Processed data.
-        
-    Returns:
-        pd.DataFrame: Data with extracted features.
-    """
-    # Perform feature extraction (e.g., create new features, transform existing ones)
-    # For demonstration, let's assume we're creating dummy variables for categorical features
-    features = pd.get_dummies(processed_data)
-    
-    return features
+        self.len_ = len(self.files)
 
-def save_features(features, output_path):
-    """
-    Saves extracted features to a file.
-    
-    Args:
-        features (pd.DataFrame): Data with extracted features.
-        output_path (str): Path to save the features file.
-    """
-    features.to_csv(output_path, index=False)
+        self.label_encoder = LabelEncoder()
 
-def main():
-    """
-    Main function to preprocess raw data, extract features, and save them to a file.
-    
-    Args:
-        raw_data_path (str): Path to the raw data file.
-        output_path (str): Path to save the features file.
-    """
-    # Preprocess raw data
-    processed_data = preprocess_data(raw_data_path)
-    
-    # Extract features
-    features = extract_features(processed_data)
-    
-    # Save features to a file
-    save_features(features, output_path)
+        if self.mode != 'test':
+            self.labels = [path.parent.name for path in self.files]
+            self.label_encoder.fit(self.labels)
 
-if __name__ == "__main__":
-    main()
+            with open('label_encoder.pkl', 'wb') as le_dump_file:
+                  pickle.dump(self.label_encoder, le_dump_file)
 
- 
- 
- 
-"""
- # We have to collect all files paths into one array according to folders, train and test
-        train_val_files = Utils.get_files_and_labels(cfg.TRAINING_FOLDER)
-        test_files = Utils.get_files_and_labels(cfg.TESTING_FOLDER)
-        
-        # Now we need to split train images into validation and train parts
-        # Train and Validation data
-        train_val_labels = [path.parent.name for path in train_val_files]
-        train_files, val_files = train_test_split(train_val_files, test_size=cfg.TEST_SIZE, random_state=cfg.RANDOM_STATE, \
-                                                stratify=train_val_labels)
-                                                """
+    def __len__(self):
+        return self.len_
+
+    def load_sample(self, file):
+        try:
+            image = Image.open(file).convert('RGB')
+            image.load()
+            return image
+        except IOError as e:
+            print(f"Error loading image {file}: {e}")
+            return None
+
+    def __getitem__(self, index):
+        file_path = self.files[index]
+        sample = self.load_sample(file_path)
+        if sample is None:
+            return None
+
+        if self.mode == "train":
+            transform = transforms_train
+        else:
+            transform = transforms.Compose([
+                transforms.Resize(size=(RESCALE_SIZE, RESCALE_SIZE)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.1852, 0.1852, 0.1853], [0.2031, 0.2031, 0.2031])
+            ])
+
+        x = transform(sample)
+
+        if self.mode == "test":
+            return x
+        else:
+            label = self.labels[index]
+            label_id = self.label_encoder.transform([label])
+            y = label_id.item()
+            return x, y

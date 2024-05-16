@@ -6,6 +6,7 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from src import Config as cfg
 
+
 class Utils():
 
     @staticmethod
@@ -39,18 +40,18 @@ class Utils():
           plt_ax.grid(False)
 
     @staticmethod
-    def my_mean(file):
+    def my_mean(file, RESCALE_SIZE):
         image = Image.open(file).convert('RGB')
         image.load()
-        image = image.resize((cfg.RESCALE_SIZE, cfg.RESCALE_SIZE))
+        image = image.resize((RESCALE_SIZE, RESCALE_SIZE))
         return torch.sum(transforms.ToTensor()(image),dim=(1,2))
 
     @staticmethod
-    def my_std(file, means = cfg.MEANS):
+    def my_std(file, means, RESCALE_SIZE):
         assert len(means)==3
         image = Image.open(file).convert('RGB')
         image.load()
-        image = image.resize((cfg.RESCALE_SIZE, cfg.RESCALE_SIZE))
+        image = image.resize((RESCALE_SIZE, RESCALE_SIZE))
         image = transforms.ToTensor()(image)
         for i in range(3):
             image[i,:,:]=(image[i,:,:]-means[i])**2

@@ -17,7 +17,7 @@ class DuplicateRemover:
         hash_dict = {}
         for data_type in ['Training', 'Testing']:
             for label in self.labels:
-                folder_path = os.path.join(self.project_dir, 'data', 'processed', data_type, label)
+                folder_path = os.path.join(self.project_dir, 'data', 'interim', data_type, label)
                 for root, dirs, files in os.walk(folder_path):
                     for file in files:
                         if file.endswith(".jpg"):

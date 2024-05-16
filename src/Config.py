@@ -4,7 +4,7 @@ import torch
 class Config:
     # Different modes
     DATA_MODES = ['train', 'val', 'test']
-    RESCALE_SIZE = 224
+    RESCALE_SIZE = 256
     BATCH_SIZE = 16
     
     # Cuda mode
@@ -13,10 +13,13 @@ class Config:
     # MEANS
     MEANS = None
     
+    #STD
+    STD = None
+    
     # define folders for input
     PROJECT_DIR = r"D:\Thesis\Project_Brain Tumor\brain_tumor_ml"
     RAW_DIR = os.path.join(PROJECT_DIR, 'data', 'raw')
-    BASE_DIR = os.path.join(PROJECT_DIR, 'data', 'processed')
+    BASE_DIR = os.path.join(PROJECT_DIR, 'data', 'interim')
     
     TRAINING_FOLDER = os.path.join(BASE_DIR, 'Training')
     TESTING_FOLDER = os.path.join(BASE_DIR, 'Testing')
